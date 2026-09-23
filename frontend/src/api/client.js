@@ -1,5 +1,5 @@
 import axios from 'axios'
-const api = axios.create({ baseURL: '/api', timeout: 15000 })
+const api = axios.create({ baseURL: 'https://webdemo2-1.onrender.com/api', timeout: 15000 })
 export const fetchAllPrices     = ()         => api.get('/prices/')
 export const fetchHistory       = (t, p)     => api.get(`/prices/${t}/history?period=${p}`)
 export const fetchPrediction    = (t, d)     => api.get(`/predictions/${encodeURIComponent(t)}?days=${d}`)
