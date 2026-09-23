@@ -1,0 +1,42 @@
+# ── Web Framework ──────────────────────────────────────────
+# Python 3.13 compatible — all flexible pins
+fastapi>=0.111.0
+uvicorn[standard]>=0.29.0
+websockets>=12.0
+python-multipart>=0.0.9
+
+# ── Data Fetching ───────────────────────────────────────────
+yfinance>=0.2.40
+requests>=2.32.0
+pandas>=2.1.0
+numpy>=1.26.0
+
+# ── ML / LSTM ───────────────────────────────────────────────
+# tensorflow 2.20.0 already installed — keep it
+tensorflow>=2.20.0
+scikit-learn>=1.5.2
+joblib>=1.4.0
+
+# ── Database / Caching ─────────────────────────────────────
+redis>=5.0.4
+sqlalchemy>=2.0.30
+aiosqlite>=0.20.0
+
+# ── Background Tasks ────────────────────────────────────────
+apscheduler>=3.10.4
+
+# ── Utilities ───────────────────────────────────────────────
+python-dotenv>=1.0.1
+pydantic>=2.7.0
+pydantic-settings>=2.2.0
+httpx>=0.27.0
+
+# ── Excel export (.xlsx) ────────────────────────────────────
+openpyxl>=3.1.0
+
+# Optional FinBERT (ProsusAI/finbert): pip install transformers torch
+# CPU wheels: https://pytorch.org/get-started/locally/
+
+# ── CORS / Auth ─────────────────────────────────────────────
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4

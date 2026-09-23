@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Dark theme (default) ─────────────────────── */
+:root, [data-theme="dark"] {
+  --bg-primary:   #0f1117;
+  --bg-surface:   #1a1d27;
+  --bg-subtle:    #13151f;
+  --bg-hover:     #1e2235;
+  --border:       #2d3148;
+  --border-strong:#3d4268;
+  --text-primary: #e2e8f0;
+  --text-secondary:#94a3b8;
+  --text-muted:   #64748b;
+  --text-hint:    #475569;
+  --accent:       #6366f1;
+  --accent-hover: #4f46e5;
+}
+
+/* ── Light theme ──────────────────────────────── */
+[data-theme="light"] {
+  --bg-primary:   #f8fafc;
+  --bg-surface:   #ffffff;
+  --bg-subtle:    #f1f5f9;
+  --bg-hover:     #f1f5f9;
+  --border:       #e2e8f0;
+  --border-strong:#cbd5e1;
+  --text-primary: #0f172a;
+  --text-secondary:#475569;
+  --text-muted:   #64748b;
+  --text-hint:    #94a3b8;
+  --accent:       #6366f1;
+  --accent-hover: #4f46e5;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; transition: background-color 0.2s, color 0.2s, border-color 0.2s; }
+
+body {
+  font-family: Inter, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-subtle); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+.card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.25rem;
+}
+
+.badge-up   { background: rgba(34,197,94,0.15);  color: #22c55e; padding: 2px 8px; border-radius: 6px; font-size: 12px; }
+.badge-down { background: rgba(239,68,68,0.15);  color: #ef4444; padding: 2px 8px; border-radius: 6px; font-size: 12px; }
+
+.live-dot { width: 8px; height: 8px; background: #22c55e; border-radius: 50%;
+            animation: pulse-dot 1.4s infinite; display: inline-block; }
+@keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.4;transform:scale(0.85)} }
+
+.tab-btn {
+  padding: 6px 16px; border-radius: 8px; font-size: 13px; font-weight: 500;
+  cursor: pointer; transition: all 0.15s; border: 1px solid transparent;
+  color: var(--text-muted); background: transparent;
+}
+.tab-btn:hover  { background: var(--bg-hover); color: var(--text-primary); }
+.tab-btn.active { background: var(--bg-surface); border-color: var(--border-strong); color: var(--text-primary); }
+
+input, select {
+  background: var(--bg-surface); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--text-primary);
+  padding: 8px 12px; font-size: 13px; outline: none;
+}
+input:focus, select:focus { border-color: var(--accent); }
+
+.prediction-bar { height: 4px; border-radius: 2px; background: var(--border); overflow: hidden; margin-top: 4px; }

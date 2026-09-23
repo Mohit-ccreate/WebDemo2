@@ -1,0 +1,7 @@
+# Optional heavier ML stack (install on top of backend/requirements.txt)
+# FinBERT sentiment (ProsusAI/finbert):
+transformers>=4.40.0
+torch>=2.2.0
+safetensors>=0.4.0
+# Transformers still checks Keras on import; use legacy tf-keras with Keras 3 installed
+tf-keras>=2.16.0

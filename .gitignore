@@ -1,0 +1,61 @@
+# ── Python / backend ─────────────────────────────────────────
+backend/.venv/
+**/__pycache__/
+**/*.py[cod]
+**/*.pyo
+**/.pytest_cache/
+**/.mypy_cache/
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# ── ML caches & trained artifacts (recreated locally) ───────
+# FinBERT: downloaded on first run → backend/.cache/huggingface
+backend/.cache/
+.cache/
+
+# LSTM: train per commodity in the app → backend/app/models/trained
+backend/app/models/trained/*
+!backend/app/models/trained/.gitkeep
+*.h5
+*.keras
+*.joblib
+
+# ── Node / frontend ─────────────────────────────────────────
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── Secrets & local env (never commit keys) ─────────────────
+.env
+.env.*
+!.env.example
+
+# ── IDE & OS ────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Local prediction history DB ─────────────────────────────
+backend/data/
+
+# ── Logs & temp ─────────────────────────────────────────────
+*.log
+logs/
+tmp/
+temp/
+
+# ── Cursor / local tooling (optional) ───────────────────────
+.cursor/
+
+# ── Old dev scripts (not required to run the app) ───────────
+_project_archive/
