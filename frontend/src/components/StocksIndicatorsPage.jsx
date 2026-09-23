@@ -110,6 +110,10 @@ export default function StocksIndicatorsPage() {
 
   useEffect(() => {
     load()
+    const id = setInterval(() => {
+      load()
+    }, 60000)
+    return () => clearInterval(id)
   }, [load])
 
   useEffect(() => {
@@ -119,13 +123,6 @@ export default function StocksIndicatorsPage() {
       .then((r) => setPredHistory(r.data))
       .catch(() => setPredHistory(null))
   }, [symbol])
-
-  useEffect(() => {
-    const id = setInterval(() => {
-      load()
-    }, 60000)
-    return () => clearInterval(id)
-  }, [load])
 
   const chartData = series.map((r) => ({
     ...r,

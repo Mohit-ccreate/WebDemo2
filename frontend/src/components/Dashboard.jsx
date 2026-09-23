@@ -29,9 +29,9 @@ export default function Dashboard({ wsData }) {
   const [todayPreds, setTodayPreds] = useState({})
   const [todayLoading, setTodayLoading] = useState(false)
 
-  const loadForecasts = () => {
+  const loadForecasts = (bypassCache = false) => {
     setTodayLoading(true)
-    return fetchAllTodayPredictions(true)
+    return fetchAllTodayPredictions(bypassCache)
       .then((r) => {
         const map = {}
         for (const p of r.data?.predictions || []) {
@@ -39,14 +39,37 @@ export default function Dashboard({ wsData }) {
         }
         setTodayPreds(map)
       })
-      .catch(() => setTodayPreds({}))
+      .catch((err) => {
+        setTodayPreds({})
+        if (err.response?.status === 429) {
+          console.warn('[Dashboard] Rate limit hit on forecasts')
+        }
+      })
       .finally(() => setTodayLoading(false))
   }
 
   useEffect(() => {
+    let mounted = true
     fetchAllPrices()
-      .then(r => { setRest(r.data.data || []); setLoading(false); return loadForecasts() })
-      .catch(() => { toast.error('Failed to load prices'); setLoading(false) })
+      .then((r) => {
+        if (!mounted) return
+        setRest(r.data.data || [])
+        setLoading(false)
+        return loadForecasts(false)
+      })
+      .catch((err) => {
+        if (!mounted) return
+        setLoading(false)
+        if (err.response?.status === 429) {
+          toast.error('Server is busy (rate limit). Retrying automatically in background.')
+        } else {
+          toast.error('Failed to load prices')
+        }
+      })
+
+    return () => {
+      mounted = false
+    }
   }, [])
 
   const merged = rest.map(c => wsData.prices[c.ticker] || c)
@@ -69,6 +92,8 @@ export default function Dashboard({ wsData }) {
       sortBy === 'price'  ? getDisplayPrice(b) - getDisplayPrice(a) :
       (a.name||'').localeCompare(b.name||''))
 
+  const isLive = wsData.connected || wsData.isRestFallback || live.length > 0
+
   return (
     <div>
       {/* Header */}
@@ -83,7 +108,7 @@ export default function Dashboard({ wsData }) {
         <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
           <button
             type="button"
-            onClick={loadForecasts}
+            onClick={() => loadForecasts(true)}
             disabled={todayLoading}
             style={{
               padding:'6px 12px', fontSize:12, borderRadius:8, cursor:'pointer',
@@ -93,9 +118,20 @@ export default function Dashboard({ wsData }) {
           >
             {todayLoading ? 'Updating forecasts…' : 'Refresh forecasts'}
           </button>
-          <span className="live-dot"/>
-          <span style={{fontSize:12,color:'#22c55e',fontWeight:500}}>
-            {wsData.connected ? 'Live' : 'Offline'}
+          <span
+            className="live-dot"
+            style={{
+              background: wsData.connected ? '#22c55e' : (wsData.isRestFallback ? '#10b981' : (live.length ? '#10b981' : '#ef4444')),
+            }}
+          />
+          <span
+            style={{
+              fontSize: 12,
+              color: wsData.connected ? '#22c55e' : (wsData.isRestFallback ? '#10b981' : (live.length ? '#10b981' : '#ef4444')),
+              fontWeight: 500,
+            }}
+          >
+            {wsData.connected ? 'Live (WS)' : (wsData.isRestFallback || live.length ? 'Live' : 'Offline')}
           </span>
         </div>
       </div>

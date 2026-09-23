@@ -1,5 +1,56 @@
 import axios from 'axios'
-const api = axios.create({ baseURL: 'https://webdemo2-1.onrender.com/api', timeout: 15000 })
+
+// Resolve API base URL: environment variable (Vite or CRA) or production Render default
+function resolveApiBaseUrl() {
+  const envUrl =
+    (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_URL) ||
+    (typeof process !== 'undefined' && process.env && process.env.REACT_APP_API_URL) ||
+    'https://webdemo2-1.onrender.com'
+
+  const trimmed = envUrl.trim().replace(/\/+$/, '')
+  return trimmed.endsWith('/api') ? trimmed : `${trimmed}/api`
+}
+
+export const API_BASE_URL = resolveApiBaseUrl()
+
+// Rate limiting (429) cooldown tracking
+let rateLimitResetTime = 0
+
+export function isApiRateLimited() {
+  return Date.now() < rateLimitResetTime
+}
+
+export function getRateLimitRemainingSeconds() {
+  return Math.max(0, Math.ceil((rateLimitResetTime - Date.now()) / 1000))
+}
+
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 15000,
+})
+
+// Response interceptor to catch 429 Too Many Requests and enforce backoff
+let last429LogTime = 0
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 429) {
+      const retryAfterHeader = error.response.headers?.['retry-after']
+      const retryAfterSeconds = parseInt(retryAfterHeader, 10) || 60
+      rateLimitResetTime = Date.now() + retryAfterSeconds * 1000
+
+      const now = Date.now()
+      if (now - last429LogTime > 10000) {
+        last429LogTime = now
+        console.warn(
+          `[API 429] Server rate limit reached. Backing off requests for ${retryAfterSeconds}s.`
+        )
+      }
+    }
+    return Promise.reject(error)
+  }
+)
+
 export const fetchAllPrices     = ()         => api.get('/prices/')
 export const fetchHistory       = (t, p)     => api.get(`/prices/${t}/history?period=${p}`)
 export const fetchPrediction    = (t, d)     => api.get(`/predictions/${encodeURIComponent(t)}?days=${d}`)

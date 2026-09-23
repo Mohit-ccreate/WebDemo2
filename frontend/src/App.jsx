@@ -80,10 +80,10 @@ export default function App() {
             border:'1px solid var(--border)', borderRadius:9 }}>
             <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:3 }}>
               <span className="live-dot"
-                style={{ background: ws.connected ? '#22c55e' : '#ef4444', width:7, height:7 }}/>
+                style={{ background: ws.connected ? '#22c55e' : (ws.isRestFallback ? '#10b981' : '#ef4444'), width:7, height:7 }}/>
               <span style={{ fontSize:11, fontWeight:500,
-                color: ws.connected ? '#22c55e' : '#ef4444' }}>
-                {ws.connected ? 'Live' : 'Offline'}
+                color: ws.connected ? '#22c55e' : (ws.isRestFallback ? '#10b981' : '#ef4444') }}>
+                {ws.connected ? 'Live (WS)' : (ws.isRestFallback ? 'Live (REST)' : 'Offline')}
               </span>
             </div>
             <div style={{ fontSize:10, color:'var(--text-hint)' }}>

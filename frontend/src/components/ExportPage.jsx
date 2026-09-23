@@ -1,9 +1,7 @@
 import { useState } from 'react'
 import { Download, FileSpreadsheet, FileText, CheckCircle, Loader } from 'lucide-react'
-import axios from 'axios'
 import toast from 'react-hot-toast'
-
-const api = axios.create({ baseURL: '/api', timeout: 30000 })
+import api from '../api/client'
 
 const STORAGE_KEY = 'commodityiq_portfolio'
 

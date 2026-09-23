@@ -1,5 +1,6 @@
 import asyncio
 import json
+import os
 import sys
 from contextlib import asynccontextmanager
 
@@ -44,14 +45,23 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="CommodityIQ API", version="1.0.0", lifespan=lifespan)
 
+allowed_origins = [
+    "http://localhost:3000",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://web-demo2-iota.vercel.app",
+]
+env_cors = os.environ.get("CORS_ORIGINS", "")
+if env_cors:
+    for o in env_cors.split(","):
+        origin = o.strip()
+        if origin and origin not in allowed_origins:
+            allowed_origins.append(origin)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-        "https://web-demo2-iota.vercel.app",
-    ],
+    allow_origins=allowed_origins,
+    allow_origin_regex=r"^https:\/\/.*\.vercel\.app$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
