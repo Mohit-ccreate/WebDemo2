@@ -29,8 +29,8 @@ function getWebSocketUrl() {
   )
 }
 
-const INITIAL_RETRY_MS = 3000
-const MAX_RETRY_MS = 30000
+const INITIAL_RETRY_MS = 5000
+const MAX_WS_ATTEMPTS = 2
 const REST_POLL_INTERVAL_MS = 45000
 
 export function useWebSocket() {
@@ -43,7 +43,7 @@ export function useWebSocket() {
   const retryRef = useRef(null)
   const pollRef = useRef(null)
   const mountedRef = useRef(true)
-  const retryDelayRef = useRef(INITIAL_RETRY_MS)
+  const attemptsRef = useRef(0)
 
   // Safe fallback REST polling when WebSocket is disconnected
   const fetchFallbackPrices = useCallback(async () => {
@@ -91,7 +91,7 @@ export function useWebSocket() {
         if (!mountedRef.current) return
         setConnected(true)
         setIsRestFallback(false)
-        retryDelayRef.current = INITIAL_RETRY_MS
+        attemptsRef.current = 0
       }
 
       ws.onmessage = (e) => {
@@ -113,12 +113,18 @@ export function useWebSocket() {
       ws.onclose = () => {
         if (!mountedRef.current) return
         setConnected(false)
+        attemptsRef.current += 1
 
-        // Schedule reconnect with exponential backoff
-        clearTimeout(retryRef.current)
-        const delay = retryDelayRef.current
-        retryDelayRef.current = Math.min(delay * 2, MAX_RETRY_MS)
-        retryRef.current = setTimeout(connect, delay)
+        // Trigger REST fallback immediately
+        fetchFallbackPrices()
+
+        // Only retry a limited number of times to prevent console flood
+        if (attemptsRef.current < MAX_WS_ATTEMPTS) {
+          clearTimeout(retryRef.current)
+          retryRef.current = setTimeout(connect, INITIAL_RETRY_MS * attemptsRef.current)
+        } else {
+          console.info('[WebSocket] Disconnected. Seamlessly active on REST price updates.')
+        }
       }
 
       ws.onerror = () => {
@@ -129,16 +135,24 @@ export function useWebSocket() {
     } catch (_) {
       if (!mountedRef.current) return
       setConnected(false)
-      clearTimeout(retryRef.current)
-      const delay = retryDelayRef.current
-      retryDelayRef.current = Math.min(delay * 2, MAX_RETRY_MS)
-      retryRef.current = setTimeout(connect, delay)
+      attemptsRef.current += 1
+      fetchFallbackPrices()
+
+      if (attemptsRef.current < MAX_WS_ATTEMPTS) {
+        clearTimeout(retryRef.current)
+        retryRef.current = setTimeout(connect, INITIAL_RETRY_MS * attemptsRef.current)
+      } else {
+        console.info('[WebSocket] Connection failed. Using REST price updates.')
+      }
     }
-  }, [])
+  }, [fetchFallbackPrices])
 
   useEffect(() => {
     mountedRef.current = true
     connect()
+
+    // Immediately trigger initial REST price check as backup
+    fetchFallbackPrices()
 
     // When WebSocket is disconnected, periodically poll prices via REST
     pollRef.current = setInterval(() => {

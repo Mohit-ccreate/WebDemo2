@@ -26,7 +26,7 @@ export function getRateLimitRemainingSeconds() {
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 15000,
+  timeout: 30000,
 })
 
 // Response interceptor to catch 429 Too Many Requests and enforce backoff
@@ -51,14 +51,14 @@ api.interceptors.response.use(
   }
 )
 
-export const fetchAllPrices     = ()         => api.get('/prices/')
-export const fetchHistory       = (t, p)     => api.get(`/prices/${t}/history?period=${p}`)
-export const fetchPrediction    = (t, d)     => api.get(`/predictions/${encodeURIComponent(t)}?days=${d}`)
+export const fetchAllPrices     = ()         => api.get('/prices/', { timeout: 30000 })
+export const fetchHistory       = (t, p)     => api.get(`/prices/${t}/history?period=${p}`, { timeout: 45000 })
+export const fetchPrediction    = (t, d)     => api.get(`/predictions/${encodeURIComponent(t)}?days=${d}`, { timeout: 90000 })
 export const fetchTodayPrediction = (t)      => api.get(`/predictions/${encodeURIComponent(t)}/today`, { timeout: 120000 })
 export const fetchAllTodayPredictions = (refresh = false) =>
   api.get('/predictions/today', { params: { refresh }, timeout: 300000 })
-export const trainModel         = (t)        => api.post(`/predictions/${encodeURIComponent(t)}/train`)
-export const fetchModelReady    = (t)        => api.get(`/predictions/${encodeURIComponent(t)}/ready`)
+export const trainModel         = (t)        => api.post(`/predictions/${encodeURIComponent(t)}/train`, null, { timeout: 180000 })
+export const fetchModelReady    = (t)        => api.get(`/predictions/${encodeURIComponent(t)}/ready`, { timeout: 30000 })
 export const fetchAlerts        = ()         => api.get('/alerts/')
 export const createAlert        = (data)     => api.post('/alerts/', data)
 export const deleteAlert        = (id)       => api.delete(`/alerts/${id}`)
