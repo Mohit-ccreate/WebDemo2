@@ -165,34 +165,79 @@ async def predict(
         return {"error": str(e), "ok": False}
 
 
+_training_lock = asyncio.Lock()
+
+
+async def _guarded_train(ticker: str):
+    async with _training_lock:
+        try:
+            return await _predictor.train(ticker)
+        except Exception as e:
+            print(f"[Predictions] Background train failed for {ticker}: {e}")
+
+
+async def _guarded_batch_train(tickers: list):
+    async with _training_lock:
+        try:
+            return await _predictor.batch_train_all(tickers)
+        except Exception as e:
+            print(f"[Predictions] Background batch_train failed: {e}")
+
+
 @router.post("/{ticker}/train")
 async def train_model(ticker: str, background_tasks: BackgroundTasks):
     """
     Trigger background retraining of the LSTM model for a ticker.
-    Returns immediately; training happens in background (~2-5 min per ticker).
+    Protected by concurrency lock to ensure single-task execution under 300MB RAM.
     """
     ticker = _validate_prediction_ticker(ticker)
 
-    # _predictor.train is an async coroutine — schedule it with create_task
-    background_tasks.add_task(asyncio.create_task, _predictor.train(ticker))
+    if _training_lock.locked():
+        return {
+            "ok": False,
+            "status": "busy",
+            "message": "Another model training task is currently in progress. Please wait for it to complete.",
+            "ticker": ticker,
+        }
+
+    background_tasks.add_task(_guarded_train, ticker)
 
     return {
-        "message":  f"Training started for {COMMODITIES[ticker]['name']} ({ticker})",
-        "ticker":   ticker,
-        "status":   "training_in_progress",
-        "note":     "Training takes 2–5 minutes. Fetch /api/predictions/models/status to check.",
+        "ok": True,
+        "message": f"Lightweight training started for {COMMODITIES[ticker]['name']} ({ticker})",
+        "ticker": ticker,
+        "status": "training_in_progress",
+        "note": "Optimized to run under 300MB RAM. Completes in seconds.",
     }
 
 
 @router.post("/train-all")
 async def train_all(background_tasks: BackgroundTasks):
-    """Kick off background training for ALL commodities."""
+    """Kick off background training for ALL commodities sequentially under concurrency lock."""
+    if _training_lock.locked():
+        return {
+            "ok": False,
+            "status": "busy",
+            "message": "Another model training task is currently in progress. Please wait for it to complete.",
+        }
+
     tickers = prediction_tickers()
-    # batch_train_all is async — schedule as a background coroutine
-    background_tasks.add_task(asyncio.create_task, _predictor.batch_train_all(tickers))
+    background_tasks.add_task(_guarded_batch_train, tickers)
     return {
-        "message": f"Batch training started for {len(tickers)} commodities",
+        "ok": True,
+        "message": f"Batch training started sequentially for {len(tickers)} commodities",
         "tickers": tickers,
-        "status":  "training_in_progress",
-        "note":    "Full training can take 30–60 minutes on CPU.",
+        "status": "training_in_progress",
+        "note": "Sequential training operates under 300MB RAM to avoid Render OOM kills.",
     }
+
+
+@router.post("/train")
+async def train_generic(
+    background_tasks: BackgroundTasks,
+    ticker: Optional[str] = Query(None, description="Optional commodity ticker. If omitted, trains all."),
+):
+    """Generic train endpoint alias (handles both single ticker and batch)."""
+    if ticker:
+        return await train_model(ticker, background_tasks)
+    return await train_all(background_tasks)

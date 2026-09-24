@@ -4,7 +4,8 @@ import os
 import sys
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
+from typing import Optional
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, BackgroundTasks, Query
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -91,6 +92,17 @@ app.include_router(scraper.router,     prefix="/api/scraper",     tags=["scraper
 app.include_router(export.router,      prefix="/api/export",      tags=["export"])
 app.include_router(stocks.router,     prefix="/api/stocks",      tags=["stocks"])
 app.include_router(sentiment.router,  prefix="/api/sentiment",   tags=["sentiment"])
+
+
+@app.post("/api/train")
+async def api_train_alias(
+    background_tasks: BackgroundTasks,
+    ticker: Optional[str] = Query(None, description="Optional commodity ticker. If omitted, trains all."),
+):
+    """Direct alias for POST /api/predictions/train."""
+    from app.routes.predictions import train_generic
+    return await train_generic(background_tasks, ticker)
+
 
 
 @app.websocket("/ws/prices")

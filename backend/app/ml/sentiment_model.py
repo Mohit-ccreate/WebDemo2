@@ -72,9 +72,16 @@ def _load_finbert_pipeline():
         return None
 
     disable = os.environ.get("DISABLE_FINBERT", "").lower() in ("1", "true", "yes")
-    if disable:
-        _LOAD_ERROR = "DISABLE_FINBERT is set"
+    # Low-memory guard: Render free tier has strict 512MB RAM ceiling. FinBERT weights are ~440MB.
+    # Automatically disable on Render or LOW_MEMORY_MODE unless explicitly enabled.
+    is_render = bool(os.environ.get("RENDER"))
+    low_mem = os.environ.get("LOW_MEMORY_MODE", "").lower() in ("1", "true", "yes")
+    force_enable = os.environ.get("ENABLE_FINBERT", "").lower() in ("1", "true", "yes")
+
+    if (disable or is_render or low_mem) and not force_enable:
+        _LOAD_ERROR = "Disabled in low-memory environment (Render 512MB ceiling). Using fast keyword sentiment fallback."
         _PIPELINE = False  # type: ignore[assignment]
+        print(f"[FinBERT] {_LOAD_ERROR}")
         return None
 
     with _LOAD_LOCK:
